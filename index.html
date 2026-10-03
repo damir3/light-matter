@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Light &amp; Matter | Complex Refractive Index (ñ = n + ik) &amp; Dispersion Model</title>
+  <meta name="description" content="Light &amp; Matter — Interactive physical model for complex refractive index (n, k) and optical dispersion based on outer atomic electron orbitals.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-icon">⚛</div>
+        <div>
+          <h1 class="brand-title">Light &amp; Matter: Complex Refractive Index (ñ = n + ik)</h1>
+          <p class="brand-subtitle">Quantum-mechanical dispersion model based on outer valence electron orbitals</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Control Bar -->
+    <section class="control-bar" aria-label="Material and wavelength range control panel">
+      <div class="control-row">
+        <!-- Material Select -->
+        <div class="control-group">
+          <label class="control-label" for="materialSelect">
+            <span>Material</span>
+          </label>
+          <div class="material-selector-wrapper">
+            <select id="materialSelect" class="select-custom">
+              <!-- Dynamically populated -->
+            </select>
+            <span class="select-icon">▼</span>
+          </div>
+
+          <!-- Category filter -->
+          <div class="category-filter" role="group" aria-label="Material categories">
+            <button class="filter-btn active" data-category="all">All</button>
+            <button class="filter-btn" data-category="metal">Metals</button>
+            <button class="filter-btn" data-category="semiconductor">Semiconductors</button>
+            <button class="filter-btn" data-category="dielectric">Dielectrics</button>
+          </div>
+
+          <button id="openCustomModalBtn" class="btn btn-outline-cyan">
+            <span>+ Custom Material</span>
+          </button>
+        </div>
+
+        <!-- Wavelength Preset Chips -->
+        <div class="control-group">
+          <span class="control-label">Spectral Range</span>
+          <div class="presets-list">
+            <button class="preset-chip active" data-min="380" data-max="780">
+              Visible (380–780 nm)
+            </button>
+            <button class="preset-chip" data-min="200" data-max="780">
+              UV + Visible (200–780 nm)
+            </button>
+            <button class="preset-chip" data-min="380" data-max="2500">
+              Visible + NIR (380–2500 nm)
+            </button>
+            <button class="preset-chip" data-min="180" data-max="3000">
+              Broadband (180–3000 nm)
+            </button>
+            <button class="preset-chip" data-min="100" data-max="5000">
+              Deep UV–MIR (100–5000 nm)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exact wavelength inputs -->
+      <div class="control-row">
+        <div class="control-group">
+          <span class="control-label">Exact Spectral Range:</span>
+          <div class="range-inputs">
+            <div class="num-input-wrap">
+              <label for="minWlInput">λ min:</label>
+              <input type="number" id="minWlInput" class="num-input" value="380" min="50" max="9999" step="10">
+              <span style="color: var(--text-muted); font-size: 11px;">nm</span>
+            </div>
+            <span style="color: var(--border-hover);">—</span>
+            <div class="num-input-wrap">
+              <label for="maxWlInput">λ max:</label>
+              <input type="number" id="maxWlInput" class="num-input" value="780" min="60" max="10000" step="10">
+              <span style="color: var(--text-muted); font-size: 11px;">nm</span>
+            </div>
+            <span style="color: var(--border-hover); margin: 0 4px;">|</span>
+            <div class="num-input-wrap">
+              <label for="stepWlInput">Step:</label>
+              <input type="number" id="stepWlInput" class="num-input" value="1" min="0.01" max="100" step="0.5" style="width: 50px;">
+              <span style="color: var(--text-muted); font-size: 11px;">nm</span>
+            </div>
+          </div>
+          <button id="applyRangeBtn" class="btn btn-secondary">Apply</button>
+        </div>
+
+        <div class="control-group export-btn-group">
+          <button id="downloadCsvTopBtn" class="btn btn-secondary" title="Export CSV in refractiveindex.info format (wl,n & wl,k in µm)">
+            <span>📥 CSV</span>
+          </button>
+          <button id="downloadTxtTopBtn" class="btn btn-secondary" title="Export TXT in refractiveindex.info format (tab-separated: wl,n & wl,k in µm)">
+            <span>📄 TXT</span>
+          </button>
+          <button id="downloadYmlTopBtn" class="btn btn-secondary" title="Export full database record YAML (.yml)">
+            <span>📦 YAML</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Spectrum Chart -->
+    <section class="card chart-card">
+      <div class="chart-toolbar">
+        <div class="mode-pills" role="tablist">
+          <button class="mode-pill active" data-mode="nk">n &amp; k (Index &amp; Extinction)</button>
+          <button class="mode-pill" data-mode="eps">ε₁ &amp; ε₂ (Permittivity)</button>
+          <button class="mode-pill" data-mode="reflectance">R(λ) (Reflectance %)</button>
+          <button class="mode-pill" data-mode="alpha">α(λ) (Absorption cm⁻¹)</button>
+        </div>
+
+        <div class="chart-actions">
+          <label class="switch-label" id="expOverlayToggleWrap" title="Overlay measured experimental benchmark points on the chart">
+            <input type="checkbox" id="expOverlayToggle" class="switch-input" checked>
+            <span>Benchmark overlay</span>
+          </label>
+          <label class="switch-label" id="logScaleToggleWrap">
+            <input type="checkbox" id="logScaleToggle" class="switch-input">
+            <span>Log scale for k</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Canvas Chart Area -->
+      <div class="canvas-wrapper">
+        <canvas id="spectrumCanvas" class="spectrum-canvas"></canvas>
+      </div>
+
+      <!-- Interactive Crosshair Inspector Bar -->
+      <div class="inspector-bar" id="inspectorBar">
+        <div class="inspector-item">
+          <span class="inspector-label">Wavelength λ</span>
+          <span class="inspector-val">
+            <span class="color-dot" id="inspColorDot" style="background-color: #facc15;"></span>
+            <span id="inspWl">632.8 nm</span>
+          </span>
+        </div>
+        <div class="inspector-item">
+          <span class="inspector-label">Photon Energy E</span>
+          <span class="inspector-val" id="inspEnergy">1.959 eV</span>
+        </div>
+        <div class="inspector-item">
+          <span class="inspector-label">Refraction n (calc / exp)</span>
+          <span class="inspector-val" id="inspN" style="color: var(--color-cyan);">0.191 <span style="font-size:11px;color:var(--text-muted);">(exp 0.180)</span></span>
+        </div>
+        <div class="inspector-item">
+          <span class="inspector-label">Extinction k (calc / exp)</span>
+          <span class="inspector-val" id="inspK" style="color: var(--color-pink);">3.478 <span style="font-size:11px;color:var(--text-muted);">(exp 3.433)</span></span>
+        </div>
+        <div class="inspector-item">
+          <span class="inspector-label">Permittivity ε₁ / ε₂</span>
+          <span class="inspector-val" id="inspEps">-12.06 / 1.33</span>
+        </div>
+        <div class="inspector-item">
+          <span class="inspector-label">Reflectance R</span>
+          <span class="inspector-val" id="inspR" style="color: var(--color-violet);">94.3%</span>
+        </div>
+        <div class="inspector-item">
+          <span class="inspector-label">Skin Depth δ</span>
+          <span class="inspector-val" id="inspDelta">14.5 nm</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Spectral Data Table -->
+    <section class="card table-card">
+      <div class="table-toolbar">
+        <div class="table-filter-group">
+          <span class="control-label">Spectral Data Table</span>
+        </div>
+      </div>
+
+      <!-- Scrollable Data Table -->
+      <div class="table-wrapper">
+        <table class="data-table" id="dataTable">
+          <thead>
+            <tr>
+              <th>λ (nm)</th>
+              <th>Band</th>
+              <th>Energy E (eV)</th>
+              <th>n (calc)</th>
+              <th>n (exp)</th>
+              <th>k (calc)</th>
+              <th>k (exp)</th>
+              <th>ε₁ (Re)</th>
+              <th>ε₂ (Im)</th>
+              <th>R (Reflectance %)</th>
+              <th>α (cm⁻¹)</th>
+              <th>Skin Depth δ (nm)</th>
+            </tr>
+          </thead>
+          <tbody id="dataTableBody">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-pagination">
+        <span id="tableRowsCount">Showing 400 spectral data points</span>
+        <div class="page-controls">
+          <span style="color: var(--text-muted);">Export delimiters: CSV (comma), TXT (tab)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Atomic & Orbital Physics Panel -->
+    <section class="card orbital-card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <span class="card-title-icon">⚛</span>
+          <span>Outer Orbitals &amp; Physics</span>
+        </h2>
+        <span class="badge badge-cyan" id="matFormulaBadge">Au</span>
+      </div>
+
+      <div class="card-body orbital-details">
+        <div class="orbital-grid">
+          <!-- Column 1: Identification & Metrics -->
+          <div class="orbital-col">
+            <!-- Element Hero Badge -->
+            <div class="element-hero">
+              <div class="element-symbol-box">
+                <span class="element-z" id="elemZ">79</span>
+                <span class="element-symbol" id="elemSymbol">Au</span>
+              </div>
+              <div class="element-meta">
+                <div class="element-name" id="elemName">Gold (Au)</div>
+                <div class="element-category" id="elemCategory">Noble Metal</div>
+              </div>
+            </div>
+
+            <!-- Electronic Configuration -->
+            <div class="prop-box">
+              <div class="prop-box-title">Full Electron Configuration</div>
+              <div class="config-string" id="elemConfig">[Xe] 4f¹⁴ 5d¹⁰ 6s¹</div>
+            </div>
+
+            <!-- Derived Plasma & Orbital Metrics -->
+            <div class="metric-grid">
+              <div class="metric-card">
+                <div class="metric-label">Material Density (ρ)</div>
+                <div class="metric-val" id="metricDensity">19.30 g/cm³</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Atomic Concentration (Nat)</div>
+                <div class="metric-val" id="metricNat">5.90 × 10²⁸ m⁻³</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Plasma Energy (Ep)</div>
+                <div class="metric-val" id="metricEp">9.06 eV</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Plasma Wavelength (λp)</div>
+                <div class="metric-val" id="metricLambdaP">136.8 nm</div>
+              </div>
+            </div>
+
+            <!-- Accuracy Benchmark Card -->
+            <div class="prop-box" id="benchmarkCard">
+              <div class="prop-box-title" style="display:flex; justify-content:space-between;">
+                <span>Measurement Benchmark</span>
+                <span style="color: var(--color-cyan);" id="benchmarkRefName">Johnson &amp; Christy (1972)</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;" id="benchmarkPointsSummary">
+                At red laser line (He-Ne 632.8 nm): calc n = 0.191, k = 3.478 vs exp n = 0.180, k = 3.433 (Δn = 0.011, Δk = 0.045).
+              </div>
+            </div>
+
+            <!-- Optical Physics Insight -->
+            <div class="physics-note" id="matPhysicsNote">
+              Interband transitions of electrons from 5d to 6s orbitals begin at 2.4 eV (wavelength ~515 nm).
+            </div>
+          </div>
+
+          <!-- Column 2: Outer Valence Shells & Dispersion Role -->
+          <div class="orbital-col">
+            <div>
+              <div class="prop-box-title" style="margin-bottom: 8px;">Outer Valence Shells &amp; Dispersion Role</div>
+              <div class="orbitals-list" id="orbitalsContainer">
+                <!-- Dynamically rendered -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Physics & Theoretical Formulas (Collapsible, at the very bottom) -->
+    <section class="card theory-card">
+      <button class="accordion-toggle" id="theoryAccordionToggle" aria-expanded="false">
+        <span class="card-title">
+          <span class="card-title-icon">📐</span>
+          <span>Physical Theory: How outer atomic orbitals determine n and k</span>
+        </span>
+        <span id="accordionArrow">▼</span>
+      </button>
+
+      <div class="accordion-content" id="theoryAccordionContent">
+        <p>
+          The optical dispersion of matter in optical, UV, and IR frequencies is dictated by the response of <strong>outer valence electrons</strong> to the oscillating electric field of light waves:
+        </p>
+
+        <div class="formula-grid">
+          <!-- Formula 1 -->
+          <div class="formula-box">
+            <div class="formula-title">1. Complex Permittivity ε̃ and Refractive Index ñ = n + ik</div>
+            <div class="formula-math">ε̃(ω) = ε₁ + iε₂ = (n + ik)² = (n² - k²) + i(2nk)</div>
+            <p>
+              Inverting the relationship yields exact analytical equations for n and k:
+              <br><strong>n = √[ (|ε̃| + ε₁) / 2 ]</strong>
+              <br><strong>k = √[ (|ε̃| - ε₁) / 2 ]</strong>, where |ε̃| = √(ε₁² + ε₂²).
+            </p>
+          </div>
+
+          <!-- Formula 2 -->
+          <div class="formula-box">
+            <div class="formula-title">2. Free Electrons and Core Polarization (Drude Model)</div>
+            <div class="formula-math">ε_Drude(ω) = ε_∞ - ω_p² / [ ω(ω + iγ₀) ]</div>
+            <p>
+              Delocalized outer electrons (e.g. 6s¹ in Au, 5s¹ in Ag) form a plasma with frequency ω_p.
+              Screening from filled d-shells provides high background permittivity <strong>ε_∞ ≈ 5.9 (Au)</strong> and <strong>ε_∞ ≈ 3.7 (Ag)</strong>.
+            </p>
+          </div>
+
+          <!-- Formula 3 -->
+          <div class="formula-box">
+            <div class="formula-title">3. Bound Electrons &amp; Interband Transitions (Lorentz Oscillators)</div>
+            <div class="formula-math">ε_Lorentz(E) = ∑ [ S_j ] / [ (E₀,j² - E²) - i·E·Γ_j ]</div>
+            <p>
+              Describes dipole transitions between atomic orbitals (e.g. 5d → 6s at the L-point near 2.72 eV and 5d → 6p at the X-point near 3.65 eV in gold).
+            </p>
+          </div>
+
+          <!-- Formula 4 -->
+          <div class="formula-box">
+            <div class="formula-title">4. Optical Reflectance and Attenuation</div>
+            <div class="formula-math">R = [ (n-1)² + k² ] / [ (n+1)² + k² ]</div>
+            <p>
+              Bouguer absorption coefficient: <strong>α(λ) = 4πk / λ</strong> (cm⁻¹).
+              <br>Optical penetration / skin depth: <strong>δ = λ / (4πk)</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Custom Material Creation Modal -->
+  <div class="modal-backdrop" id="customMaterialModal" role="dialog" aria-modal="true" aria-labelledby="customModalTitle">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h3 class="modal-title" id="customModalTitle">Create Custom Material</h3>
+        <button class="modal-close-btn" id="closeCustomModalBtn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-secondary);">
+          Define the atomic and orbital parameters of your substance. The calculator automatically computes conduction electron density, Drude plasma frequency, and models optical constants (n, k).
+        </p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customMatName">Material Name</label>
+            <input type="text" id="customMatName" class="form-input" value="Custom Alloy / Dielectric">
+          </div>
+          <div class="form-group">
+            <label for="customMatFormula">Chemical Formula</label>
+            <input type="text" id="customMatFormula" class="form-input" value="X-alloy">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customMatDensity">Density ρ (g/cm³)</label>
+            <input type="number" id="customMatDensity" class="form-input" value="10.0" step="0.1" min="0.1">
+          </div>
+          <div class="form-group">
+            <label for="customMatMolar">Molar Mass M (g/mol)</label>
+            <input type="number" id="customMatMolar" class="form-input" value="100.0" step="0.1" min="1.0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customMatValence">Outer Valence Electrons Z_val</label>
+            <input type="number" id="customMatValence" class="form-input" value="1" min="0" max="10">
+          </div>
+          <div class="form-group">
+            <label for="customMatType">Material Type</label>
+            <select id="customMatType" class="form-input">
+              <option value="metal">Metal (Drude free electrons)</option>
+              <option value="dielectric">Dielectric / Semiconductor (bound orbitals)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customMatEp">Plasma Energy Ep (eV)</label>
+            <input type="number" id="customMatEp" class="form-input" value="9.0" step="0.1" min="0">
+          </div>
+          <div class="form-group">
+            <label for="customMatDrudeF">Conduction Electron Fraction f₀</label>
+            <input type="number" id="customMatDrudeF" class="form-input" value="0.75" step="0.05" min="0" max="1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customMatDrudeGamma">Drude Collision Damping γ₀ (eV)</label>
+            <input type="number" id="customMatDrudeGamma" class="form-input" value="0.05" step="0.01" min="0.001">
+          </div>
+          <div class="form-group">
+            <label for="customMatEpsInf">Core Background Permittivity ε∞</label>
+            <input type="number" id="customMatEpsInf" class="form-input" value="5.9" step="0.1" min="1.0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="customMatConfig">Outer Orbitals Configuration</label>
+          <input type="text" id="customMatConfig" class="form-input" value="Outer valence subshells s, p, d">
+        </div>
+
+        <div class="form-group">
+          <label for="customMatOsc1">Interband Orbital Resonance 1: Energy E₀ (eV), Strength S, Damping Γ (eV)</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <input type="number" id="customOscE1" class="form-input" placeholder="E₀ (eV)" value="2.7" step="0.1">
+            <input type="number" id="customOscF1" class="form-input" placeholder="Strength S" value="5.5" step="0.1">
+            <input type="number" id="customOscG1" class="form-input" placeholder="Damping Γ" value="0.5" step="0.05">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancelCustomBtn" class="btn btn-secondary">Cancel</button>
+        <button id="saveCustomMatBtn" class="btn btn-primary">Create &amp; Calculate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">
+    <span id="toastMsg">Data successfully copied to clipboard!</span>
+  </div>
+
+  <!-- Application Scripts -->
+  <script src="materials.js?v=2"></script>
+  <script src="physics.js?v=2"></script>
+  <script src="chart.js?v=2"></script>
+  <script src="app.js?v=2"></script>
+</body>
+</html>
