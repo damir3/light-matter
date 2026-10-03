@@ -1,5 +1,9 @@
 # Light & Matter: Complex Refractive Index ($\tilde{n} = n + ik$)
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?logo=github)](https://damir3.github.io/light-matter/)
+
+> **Online Demo:** [https://damir3.github.io/light-matter/](https://damir3.github.io/light-matter/)
+
 **Light-Matter** is an interactive web application built with pure Vanilla JS, HTML5, and CSS3 for modeling and analyzing the complex refractive index $\tilde{n}(\lambda) = n(\lambda) + ik(\lambda)$ of various materials (metals, semiconductors, and dielectrics) across the optical (380–780 nm), ultraviolet (UV), and infrared (IR) spectral bands.
 
 Calculations are based on a **quantum-orbital Drude-Lorentz dispersion model** incorporating the **outer valence electron shells** of atoms and calibrated against experimental benchmarks.
@@ -31,19 +35,6 @@ From these two wavelength-dependent optical constants, all macroscopic light-mat
 - **Chromatic Dispersion:** Variations in $n(\lambda)$ across wavelengths produce prismatic rainbow splitting, dispersion fringing, and caustics in transparent dielectrics (diamond, glass, crystals).
 
 While surface roughness is modeled geometrically via microfacet distributions, **at every micro-interface specular reflection and refraction are dictated strictly by $n(\lambda)$ and $k(\lambda)$**. By providing physically grounded, continuous $(n, k)$ spectra directly from electronic orbital structures, **Light-Matter** serves as a first-principles foundation for physical material shaders, spectral rendering, and wave-optics simulations.
-
----
-
-## Quick Start
-
-The application runs directly in the browser with zero external dependencies, build tools, or frameworks:
-
-1. Open `index.html` in any modern web browser (Chrome, Safari, Firefox, Edge).
-2. Or serve locally via a static HTTP server:
-   ```bash
-   python3 -m http.server 8000
-   ```
-   and visit [http://localhost:8000](http://localhost:8000).
 
 ---
 
